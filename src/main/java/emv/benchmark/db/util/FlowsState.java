@@ -1,4 +1,4 @@
-package emv.benchmark.db;
+package emv.benchmark.db.util;
 
 import java.util.Random;
 

@@ -1,7 +1,7 @@
 package emv.benchmark.db.benchmarks;
 
-import emv.benchmark.db.FlowsState;
 import emv.benchmark.db.util.BenchmarkUtils;
+import emv.benchmark.db.util.FlowsState;
 import java.sql.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
@@ -9,29 +9,15 @@ import org.openjdk.jmh.annotations.*;
 
 @State(Scope.Benchmark)
 public class PostgresBenchmark {
+  
+  private static final int THREADS_COUNT = 1;
 
   @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
-  @OutputTimeUnit(TimeUnit.SECONDS)
-  @Warmup(iterations = 0, time = 1)
-  @Measurement(iterations = 1, time = 1)
-  public void checkConnection() throws SQLException {
-    try (Connection connection = BenchmarkUtils.getConnection();
-        PreparedStatement preparedStatement =
-            connection.prepareStatement("SELECT * FROM flows LIMIT 1")) {
-      ResultSet resultSet = preparedStatement.executeQuery();
-      while (resultSet.next()) {
-        System.out.println(resultSet.getInt(3) + " | " + resultSet.getInt(4));
-      }
-    }
-  }
-
-  @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
+  @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
+  @Threads(THREADS_COUNT)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void rowLockSingleTransaction() {
     try (Connection connection = BenchmarkUtils.getConnection()) {
-      connection.setAutoCommit(false);
       String acquireLockQuery =
           """
           SELECT flow_id, state, status
@@ -79,12 +65,11 @@ public class PostgresBenchmark {
   }
 
   @Benchmark
-  @BenchmarkMode(Mode.AverageTime)
+  @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
+  @Threads(THREADS_COUNT)
   @OutputTimeUnit(TimeUnit.MILLISECONDS)
   public void rowLockTwoTransactions() {
     try (Connection connection = BenchmarkUtils.getConnection()) {
-      connection.setAutoCommit(false);
-
       String findLocksQuery =
           """
       SELECT flow_id, state, status
