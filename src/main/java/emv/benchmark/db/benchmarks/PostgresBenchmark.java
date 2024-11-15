@@ -6,11 +6,15 @@ import java.sql.*;
 import java.util.Random;
 import java.util.concurrent.TimeUnit;
 import org.openjdk.jmh.annotations.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 @State(Scope.Benchmark)
 public class PostgresBenchmark {
-  
-  private static final int THREADS_COUNT = 1;
+
+  private static final int THREADS_COUNT = 50;
+
+  Logger LOGGER = LoggerFactory.getLogger(PostgresBenchmark.class);
 
   @Benchmark
   @BenchmarkMode({Mode.AverageTime, Mode.Throughput})
@@ -55,8 +59,10 @@ public class PostgresBenchmark {
         } else {
           connection.rollback();
         }
-      } catch (SQLException e) {
 
+        acquiredLockSet.close();
+      } catch (SQLException e) {
+        LOGGER.error("SQL EXCEPTION FOR ROW LOCK: ", e);
         connection.rollback();
       }
     } catch (RuntimeException | SQLException e) {
@@ -119,6 +125,8 @@ public class PostgresBenchmark {
         } else {
           connection.rollback();
         }
+
+        foundLocks.close();
       }
 
     } catch (SQLException e) {
